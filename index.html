@@ -1,0 +1,811 @@
+<html lang="en">
+<head>
+	<style>
+		:root {
+		   --pixel-size: 2px;
+		   --grid-cell: calc( var(--pixel-size) * 16);
+		   --bg: #9fa7e4;
+		}
+		@media( min-width: 500px ) {
+		   :root {
+			  --pixel-size: 3px;
+		   }
+		}
+		@media( min-width: 700px ) {
+		   :root {
+			  --pixel-size: 4px;
+		   }
+		}
+		/* @media( min-width: 1000px ) {
+		   :root {
+			  --pixel-size: 5px;
+		   }
+		} */
+
+		html, body {
+		   height: 100%;
+         overflow: hidden;
+		}
+		body {
+		   background: var(--bg);
+		   display: flex;
+		   align-items: center;
+		   justify-content: center;
+		}
+      .taskscreen{
+         border: 2px dashed white;
+		   width: 95%;
+		   height: 90%;
+         background: #61ddf7;
+         display:none;
+      }
+		.pixel-art {
+		   image-rendering: pixelated;
+		}
+		.camera {
+         -display:none;
+		   -width: calc(var(--pixel-size) * 160);
+		   -height: calc(var(--pixel-size) * 144);
+		   width: 90%;
+		   height: 90%;
+      
+		   overflow: hidden;
+		   background: #61ddf7;
+		   position:relative;
+		}
+		.map {
+		   image-rendering: pixelated;
+		   background-image: url("https://json-xml-web-view.000webhostapp.com/enggame/img/CameraDemoMap.png");
+		   background-size: 100%;
+		   width: calc(13 * var(--grid-cell));
+		   height: calc(10 * var(--grid-cell));
+		   position: relative;
+         transition: scale 0.3s;
+		}
+		.character {
+		   width: calc( var(--grid-cell)* 2 );
+		   height: calc( var(--grid-cell)* 2 );
+		   position: absolute;
+		   overflow: hidden;         
+		}	
+		.shadow {
+		   width: calc( var(--grid-cell)* 2 );
+		   height: calc( var(--grid-cell)* 2 );
+		   position: absolute;
+		   left:0;
+		   top:0;
+		   background: url("https://json-xml-web-view.000webhostapp.com/enggame/img/DemoRpgCharacterShadow.png") no-repeat no-repeat;
+		   background-size: 100%;
+		}
+		.character_spritesheet {
+		   position: absolute;
+		   -background: url("img/SARA.png") no-repeat no-repeat;
+		   background-size: 100%;
+		   width: calc( var(--grid-cell)* 8 );
+		   height: calc( var(--grid-cell)* 8 );
+         transform-origin: left calc( var(--grid-cell)* 2 );
+         animation: idleAnimation 1.5s steps(2) infinite;
+		}
+		.cart {
+		   position: absolute;
+         z-index: 30;
+         right: calc( var(--grid-cell)* 0.5);
+         top: calc( var(--grid-cell)* 1 );
+		   background: url("https://json-xml-web-view.000webhostapp.com/enggame/img/cart.png") no-repeat no-repeat;
+		   background-size: 100%;
+		   width: calc( var(--grid-cell)* 4 );
+		   height: calc( var(--grid-cell)* 4 );
+		}
+		.character[listening="true"] {
+		   -background: url("https://json-xml-web-view.000webhostapp.com/enggame/img/ears.png") no-repeat no-repeat;
+         background-size: 100%;
+		}
+		.character[facing="right"] .character_spritesheet {
+		   background-position-y: calc( var(--pixel-size) * -32 );
+		}
+		.character[facing="up"] .character_spritesheet {
+		   background-position-y: calc( var(--pixel-size) * -64 );
+		}
+		.character[facing="left"] .character_spritesheet {
+		   background-position-y: calc( var(--pixel-size) * -96 );
+		}
+		.character[walking="true"] .character_spritesheet {
+		   animation: walkAnimation 0.6s steps(4) infinite; 
+		}
+      .character[speaking="true"] .character_spritesheet {
+         background-position-y: calc( var(--pixel-size) * -128 );
+         animation: speakAnimation 1s steps(4) infinite;
+      }
+         
+		@keyframes walkAnimation {
+         from {transform: translate(0%,0%);}
+         to {transform: translate(-100%,0%);}		  
+		}
+      @keyframes speakAnimation {
+         from {transform: translate(0%,0%);}
+         to {transform: translate(-100%,0%);}		  
+		}
+		@keyframes idleAnimation {
+         0% {transform: scale(1,1)}
+         50% {transform: scale(1,1.02)}
+         100% {transform: scale(1, 1)}		  
+		}
+      .textbox {
+         position: absolute;
+         top:0;
+         left:0;
+         right:0;
+
+         margin-left: auto;
+         margin-right: auto;
+         border: 2px dashed;
+         width: 90%;
+         padding: 3px;
+         font-family: 'Sora', monospace;
+         font-size: 4vw;
+         background: white;
+      }
+      .recbtn {
+         position: absolute;
+         top:80%;
+         left:10%;
+         width: calc( var(--grid-cell)* 2 );
+		   height: calc( var(--grid-cell)* 2 );
+         border: 2px dashed white;
+         border-radius: 100px;
+         user-select: none;
+         opacity:0.3;
+         background: url("https://json-xml-web-view.000webhostapp.com/enggame/img/micbtn.png") no-repeat no-repeat;
+		   background-size: 100%;
+         
+      }
+  
+	</style>
+</head>
+<body>
+   <div class="taskscreen" onclick="this.style.display='none';document.querySelector('.camera').style.display='block'">
+      <p>sdf</p>
+   </div> 
+   <div class="camera">
+      <div class="map pixel-art">
+         <div class="cart"></div>
+      </div>
+      <div class="textbox">.</div>
+      <button class="recbtn" ontouchstart="recBtnDown()" ontouchend="recBtnUp()" onmousedown="recBtnDown()" onmouseup="recBtnUp()"></button>
+   </div>
+
+<!-- SCENARIOS --><script>/*
+`
+BURGER PLACE
+🎙️ Hello
+🔊👨 Hello! What can I get you?
+🎙️ One cheeseburger, please
+🔊👨 What would you like to drink?
+🎙️ Cola, please
+🔊👨 Ok. One cheeseburger and cola. Is that correct?
+🎙️ Yes
+🔊👨 It's $10. Cash or card?
+🎙️ Card, please.
+🔊 Okay. Here is your card reader. Thank you!
+🎙️ Thank you!
+
+
+
+`   
+   
+   
+`
+▶️ Анимация рейсайклера
+🕘3000🔊 Recycled, pip-pip-pip
+🏁🔊👨 Окей.. Попробуем еще раз
+🕘500▶️👨 Подходит к компу
+🏁▶️👨 Поворачивается к компу
+🏁▶️ Анимация экрана компа 
+▶️ Анимация кабины
+🕘500🔊👨 Так.., неплохо
+▶️👨 Подходит к кабине
+🏁🔊👨 Активировать RoboGPT
+🏁▶️ Кабина открывается 
+▶️🤖 выезжает 
+🔊Вж-ж-ж-ж
+🏁🔊👨 Ну привет!
+🏁🎙️ - AnySpeech
+🏁   - NoSpeech [NoSpeech]:
+🏁		   🔊👨 Включи уже микрофон
+					 ... -> GameOver
+💬 /\i0∆Я́m_3¼Ź∆ēU,
+🔊👨 А черт, нет поддержки кирилицы. Окей, скажи Hello world!
+🎙️ - Hello world
+	- NoSpeech -> [NoSpeech]
+	- AnySpeech [AnySpeech]:
+		 🔊👨 Не расслышал, ну-ка повтори
+					 ... -> GameOver
+▶️ Села батарейка
+🔊👨 Ну вот, потратил весь заряд на размышления. Скажи Charge me
+🎙️ - Charge me
+	- NoSpeech -> [NoSpeech]
+	- AnySpeech -> [AnySpeech]
+▶️ Зарядка  🔊
+🔊👨 Отлично, болталка работает. Теперь проверим интеллект. Скажи, сколько будет 9996^321
+🎙️ - NoSpeech, AnySpeech
+🔊👨 Вот черт, опять слишком мало нейронов... Ладно, Follow me
+▶️👨 Подходит к ресайклеру
+🔊👨 Follow me значит Иди сюда. Давай, Follow me
+❔ Проверка координат
+	- На месте
+	- Не на месте
+🔊👨 Stand here
+▶️👨 Подходит к компу
+▶️👨 запускает ресайклер
+▶️ Анимация рейсайклера
+▶️ Затемнение экрана
+🔊 Recycled, pip-pip-pip
+
+
+🤖🔊🗣
+`
+   */</script>
+   
+<!-- SPEECH <=> TEXT --><script>
+   var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition
+   var recognition = new SpeechRecognition()
+   recognition.continuous = true
+   recognition.lang = 'en-US'
+   recognition.interimResults = false
+   recognition.maxAlternatives = 1
+   
+   var replyFunc = console.log // функция, в которую преедаюется результат распознавания речи для ответа
+   
+   recognition.onresult = e =>    replyFunc(e.results[e.results.length-1][0].transcript) 
+   recognition.onspeechend = e => console.log('SPEECHEND') 
+   recognition.onnomatch = e =>   console.log('NOMATCH') 
+   recognition.onerror = e =>     console.log('RECOGNITION ERROR ' + e.error)
+   
+   function recBtnDown(){
+      if (!activescenario) return
+      document.querySelector('.recbtn').style.scale='1.5'
+      if (audio) audio.pause()
+      personages[1].perselem.setAttribute('speaking', false)
+      recognition.start()
+   }
+   function recBtnUp(){
+      document.querySelector('.recbtn').style.scale=''
+      recognition.stop()
+   }
+   
+</script>
+   
+<!-- SOUNDS --><script>
+   var audio
+   function play(relativeURL) {
+     if (audio) audio.pause()
+     audio = new Audio('https://json-xml-web-view.000webhostapp.com/enggame/' + relativeURL)
+     personages[1].perselem.setAttribute('speaking', true)
+     audio.onended = e => personages[1].perselem.setAttribute('speaking', false)
+     audio.play();
+   }
+</script>
+   
+<!-- SPRITES --><script>
+   var spritesheets = [
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/Cube.png",
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/HANK.png",
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/EMMY.png",
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/SHIRMOND.png",
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/SARA.png",
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/PATTY.png",
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/JESSIE.png",
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/KIM.png",
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/MINDY.png",
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/ZAK.png",
+      "https://json-xml-web-view.000webhostapp.com/enggame/img/BEAR.png"  ]
+
+</script>
+   
+<!-- SET PERSONAGES --><script>
+   var defaultPersonage = {
+      spritesheet: spritesheets[0],
+      x: 90,
+      y: 34,
+      facing: 'down',
+      speed: 1  }
+
+   var personages = []
+
+   function addNewPersonage(props){
+      props = Object.assign({}, defaultPersonage, props)
+      var pixelSize = parseInt(
+         getComputedStyle(document.documentElement).getPropertyValue('--pixel-size')  )
+
+      let perselem = document.createElement('div')
+      perselem.classList.add('character')
+      perselem.setAttribute('facing',props.facing)
+      perselem.style.zIndex = props.y
+
+      let shadow = document.createElement('div')
+      shadow.classList.add('shadow','pixel-art')
+      perselem.append(shadow)
+
+      let sprite = document.createElement('div')
+      sprite.classList.add('character_spritesheet','pixel-art')
+      sprite.style.backgroundImage = 'url("' + props.spritesheet + '")'
+      perselem.append(sprite)
+
+      document.querySelector('.map').append(perselem)
+
+      perselem.style.transform = `translate3d( ${props.x*pixelSize}px, ${props.y*pixelSize}px, 0 )`
+
+      props.perselem = perselem
+      props.w = parseInt(getComputedStyle(perselem).getPropertyValue('width'))/pixelSize
+      props.h = parseInt(getComputedStyle(perselem).getPropertyValue('height'))/pixelSize
+      personages.push(props)
+   }
+   addNewPersonage({x: 40, y: 80, spritesheet: spritesheets[2], facing: 'down'})
+   addNewPersonage({x: 110, y: 30, spritesheet: spritesheets[1], facing: 'down', speed: 0.5})
+   //addNewPersonage({x: 40, y: 60, spritesheet: spritesheets[3], facing: 'down', speed: 0.3});
+</script>
+   
+<!-- CONTROLS --><script>
+   document.querySelector('.character').onclick = e => {
+      document.querySelector('.character_spritesheet').style.backgroundImage =
+         'url("' + spritesheets[Math.floor(Math.random() * spritesheets.length)] + '")'  }
+
+   var touchstartx, touchstarty, touch = false
+   document.ontouchstart = e => { 
+      touchstartx = e.touches[0].clientX 
+      touchstarty = e.touches[0].clientY 
+      touch = true }
+   document.ontouchmove = e => {
+      if (touch) {
+         let directions = {
+            [e.touches[0].clientX - touchstartx]: 'right',
+            [e.touches[0].clientY - touchstarty]: 'down',
+            [touchstartx - e.touches[0].clientX]: 'left',
+            [touchstarty - e.touches[0].clientY]: 'up', }
+         held_directions[0] = directions[Math.max(...Object.keys(directions))]  }}
+   document.ontouchend = e => {held_directions = []; touch = false}
+
+   /* Direction key state */
+   const keys = {
+      38: 'up',
+      37: 'left',
+      39: 'right',
+      40: 'down',  }
+
+   document.addEventListener("keydown", (e) => {
+      let dir = keys[e.which]
+      if (dir && held_directions.indexOf(dir) === -1) held_directions.unshift(dir)  })
+
+   document.addEventListener("keyup", (e) => {
+      let dir = keys[e.which]
+      let index = held_directions.indexOf(dir)
+      if (index > -1) held_directions.splice(index, 1)  })
+      
+</script>
+   
+<!-- ANIMATION COMMANDS--><script>
+   var map = document.querySelector(".map")
+   var held_directions = []  //State of which arrow keys we are holding down
+   var pixelSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--pixel-size'))
+
+   const goto = (pIndex, direction) =>{
+      let p0 = personages[pIndex],
+          character = p0.perselem,
+          x = p0.x, y = p0.y
+      
+      if (direction == undefined) {character.setAttribute("walking", false);return}
+      else if (direction == 'right')	x +=  p0.speed
+      else if (direction == 'left') 	x -=  p0.speed
+      else if (direction == 'down') 	y +=  p0.speed
+      else if (direction == 'up') 		y -=  p0.speed
+
+      character.setAttribute("facing", direction)
+      character.setAttribute("walking", false)
+
+      if (x<-8 || x>16*11+8 || y<-8+32 || y>16*7) return {type: 'wall'}//walls
+      if (x>115 && x<190 && y>25 && y<50) return {type: 'cart'}//cart 120 37 184 46
+      let p = personages[1]
+      if (p!=p0 && x>p.x-p.w*1.2 && x<p.x+p.w*1.2 && y>p.y-p.h*1.2 && y<p.y+p.h*1.2) startdialog()
+      else enddialog()
+      
+      for (let p of personages){
+         if (p!=p0 && x>p.x-p.w*0.7 && x<p.x+p.w*0.7 && y>p.y-p.h*0.5 && y<p.y+p.h*0.5){
+            return {type: 'personage', content: p}  }}
+
+      character.setAttribute("walking", true)
+      character.style.transform = `translate3d( ${x*pixelSize}px, ${y*pixelSize}px, 0 )`
+      character.style.zIndex = parseInt(y)
+      //console.log (x,y)
+      p0.x = x, p0.y = y  }
+
+   const gotoXY = (pIndex, x, y, c=b=>b) => {
+      let x0 = personages[pIndex].x, 
+          y0 = personages[pIndex].y   
+      return   y+1 < y0 ? goto(pIndex, 'up') :
+               y-1 > y0 ? goto(pIndex, 'down') :     
+               x+1 < x0 ? goto(pIndex, 'left') :
+               x-1 > x0 ? goto(pIndex, 'right') :
+               stand(pIndex)
+      // if       (result?.type == 'wall')      console.log(pIndex +' wall')
+      // else if  (result?.type == 'personage') console.log(pIndex + ' personage')
+      // else if  (result?.type == 'done')      console.log(pIndex + ' done')
+      }
+   
+   const stand = (pIndex, facing) => {
+      personages[pIndex].perselem.setAttribute("walking", false)
+      if (facing) personages[pIndex].perselem.setAttribute("facing", facing)
+      return {type: 'done'}  }
+
+   const moveCamera = () => {
+      let camera_left = pixelSize * 66,
+          camera_top = pixelSize * 42,
+          x = personages[0].x,
+          y = personages[0].y          
+      map.style.transform = 
+         `translate3d( ${-x*pixelSize+camera_left}px, ${-y*pixelSize+100+camera_top}px, 0 )`  }
+
+</script>
+
+<!-- TEXTBOX --><script>
+   let textbox = document.querySelector('.textbox')
+
+   function addChar(arr=[], cb=o=>o){
+      textbox.textContent += arr.splice(0, 1)[0]
+      if (arr.length > 0) setTimeout(() => addChar(arr, cb), 50)
+      else {
+         write.writing = false
+         setTimeout(cb, 100)   }}
+
+   const write = (text, cb=o=>o) => {
+      if (!write.writing){
+         write.writing = true
+         textbox.textContent = ''
+         addChar(text.split(''), cb)   }else(console.log('WRITING '+text))}
+   
+</script>
+   
+<!-- ANIMATIONS BURGER JOINT --><script>
+   
+   function similarPhrases(str1, str2){
+      if (str1.toUpperCase().replace(/\W/g, '')==str2.toUpperCase().replace(/\W/g, '')) return true
+      else {
+         console.log(str1.toUpperCase().replace(/\W/g, '') +' != '+ str2.toUpperCase().replace(/\W/g, ''))
+         return false
+      }
+   }
+   
+   var activescenario = false
+   function startdialog(){
+      if (activescenario) {return}
+      else {
+         console.log('startdialog')
+         activescenario = true
+         map.style.scale="1.5"
+         document.querySelector('.recbtn').style.opacity='1'
+         personages[1].perselem.setAttribute("listening", true) 
+         replyFunc = reply1
+      }
+   }
+   function enddialog(){
+      if (!activescenario) {return}
+      console.log('enddialog')
+      activescenario = false
+      map.style.scale=""
+      document.querySelector('.recbtn').style.opacity='0.3'
+      personages[1].perselem.setAttribute("listening", false)
+   }
+   
+   function whatDoYouMean(){
+      play('sounds/excuse-me-what-lo-you-mean.mp3')
+      write('1 Excuse me, what do you mean?')   }
+   
+   function reply1(phrase){
+      if (!activescenario) return
+      if (similarPhrases(phrase,'hello')) {
+         play('sounds/1-hello-what-can-I-get-you.mp3')
+         replyFunc = reply2
+         write('1 Hello! What can I get you?')   }
+      else whatDoYouMean() } 
+   
+   function reply2(phrase){
+      if (!activescenario) return
+      if (similarPhrases(phrase,'one cheeseburger please')) {
+         play('sounds/2-what-would-you-like-to-drink.mp3')
+         replyFunc = reply3
+         write('2 What would you like to drink?')   }
+      else whatDoYouMean() }   
+   
+   function reply3(phrase){
+      if (!activescenario) return
+      if (similarPhrases(phrase,'coca cola please')) {
+         play('sounds/3-ok-one-cheeseburger-one-cola-correct.mp3')
+         replyFunc = reply4
+         write('3 Ok. One cheeseburger and cola. Is that correct?')   }
+      else whatDoYouMean() }   
+   
+   function reply4(phrase){
+      if (!activescenario) return
+      if (similarPhrases(phrase,'yes')) {
+         play('sounds/4-your-lunch-thanks.mp3')
+         write('4 Your lunch, thanks for ordering')   }
+      else whatDoYouMean() }   
+     
+   //personages[0].perselem.setAttribute("listening", true)
+   
+   let rafActions = [()=>{
+      let resp = goto(0, held_directions[0])
+      //if (resp?.type=='personage') resp.content.perselem.setAttribute("listening", true)  
+      }]
+   
+   //Set up the game loop
+   const step = () => {
+      rafActions.forEach( i=>i() )
+      moveCamera()
+      requestAnimationFrame(step)  }
+
+   step()  //kick off the first step
+   
+</script>
+   
+<!-- ANIMATIONS ROBOGPT --><script>/*
+
+   let rafActions = []
+
+   const dance = (pInd, cb) => {
+      let delay = 0
+      while(delay<2000){
+         ['left', 'up', 'right', 'down'].forEach(
+            dir => setTimeout(() => stand(pInd, dir), delay+=100)   )}
+      setTimeout(cb, delay)   }  
+   
+   recycle()
+   
+   function recycle(){ 
+      dance(1)
+      setTimeout(() => write('Recycled, pip-pip-pip', well), 3000)   }
+   function well () { 
+      setTimeout(() => write('Well, lets try again...', gotoComp), 1000)  } 
+   function gotoComp(){
+      rafActions = [() => {
+         let r = gotoXY(2, 60, 34)
+         if (r?.type == "done") {
+            rafActions=[]
+            type()  }
+         else if (r?.type == "personage"){
+            write('hello')   }}]}
+   function type() {
+      dance(2)
+      dance(0, outing)   }
+   function outing(){
+      personages[0].perselem.setAttribute("walking", true)
+      setTimeout(() => {
+         personages[0].perselem.setAttribute("walking", false)
+         rafActions = [()=>goto(0, held_directions[0])]
+         say1()
+      }, 2000)   }
+   function say1(){
+      stand(2,'right')
+      write('Hello', ()=>rec(say2))   }
+   function say2(phrase){
+      if (phrase=='ERROR') {
+         write('Какая то ошибка!')   }
+      else if (phrase=='STOP' || phrase=='SPEECHEND' || phrase=='NOMATCH') {
+         write('Ты не хочешь разговаривать?', ()=>rec(say2))   }
+      else {
+         write('А, черт, нет поддрежки кирилицы. Ок, скажи Hello world', ()=>rec(say3))   }}
+   function say3(phrase){
+      if (phrase=='ERROR') {
+         write('Какая то ошибка!')   }
+         else if (phrase=='STOP' || phrase=='SPEECHEND' || phrase=='NOMATCH') {
+         write('Ты не хочешь разговаривать?', ()=>rec(say3))   }
+      else if (phrase=='hello world') {
+         write('Отлично')   }      
+      else {
+         write('Скажи Hello world', ()=>rec(say3))   }}
+   
+
+   
+   
+
+
+   //Set up the game loop
+   const step = () => {
+      rafActions.forEach( i=>i() )
+      //goto(0, held_directions[0])
+      moveCamera()
+      requestAnimationFrame(step)  }
+
+   step()  //kick off the first step
+
+*/</script>
+   
+<!-- ANIMATIONS PROMISE --><script>/*
+      
+      //Set up the game loop
+      const step = () => {
+         if (goto(0, held_directions[0])) write('Oh, hello! Have you seen my pet frog around?')
+         moveCamera()
+         requestAnimationFrame(step)  }
+      
+      step()  //kick off the first step
+
+      const anim = func => new Promise(resolve => {
+            let runAnimation = () => {
+               if (func()) resolve() 
+               else requestAnimationFrame(runAnimation)  }
+            requestAnimationFrame(runAnimation)   })
+      
+      const recycledance = () => new Promise(resolve => {
+         let delay = 0
+         while(delay<3000){
+            ['left', 'up', 'right', 'down'].forEach(
+               dir => setTimeout(() => stand(1, dir), delay+=100)   )}
+         setTimeout(resolve, delay)   })
+      
+      // write('Oh, hello! Have you seen my pet frog around?')
+      //    .then(()=>anim(()=>gotoXY(1, 90, 34))) 
+      anim(()=>gotoXY(2, 34, 90))
+         .then(()=>anim(()=>gotoXY(2, 90, 34)))
+         .then(()=>anim(()=>gotoXY(2, 34, 34)))
+      anim(()=>gotoXY(1, 34, 90))
+         //.then(recycledance)
+         .then(()=>write('Oh, hello! Have you seen my pet frog around?'))
+         .then(()=>anim(()=>gotoXY(1, 90, 34)))
+         .then(()=>anim(()=>gotoXY(1, 90, 90)))
+
+
+   */</script>
+   
+<!-- GARBAGE     
+
+<div id="recbtn" class="recbtn" ontouchstart="rec()" ontouchend="timerToStopRec = setTimeout(()=>stoprec(), 2000)" onmousedown="rec()" onmouseup="timerToStopRec = setTimeout(()=>stoprec(), 2000)">🎙️</div> 
+
+   var soundphrases = {
+      '1 hello what can I get you':             'https://docs.google.com/uc?export=download&id=1GKRX3xpCuTeBrpJh0rAd-Yy9T5pI1x6b',
+      '2 what would you like to drink':         'https://docs.google.com/uc?export=download&id=1Mgu1AsayYrCEcUsSkKpJ1GEcf82HNlDT',
+      '3 ok one cheeseburger one cola correct': 'https://docs.google.com/uc?export=download&id=1_huVjjue9cMCILKgm8PQyC9wWTpt0JYV',
+      '4 your lunch thanks':                    'https://docs.google.com/uc?export=download&id=1psvs0OZjDoGNJMTRLnebc0CgCX1Og0L9',
+      'excuse me what lo you mean':             'https://docs.google.com/uc?export=download&id=1GpUapoDqQgWgwdC89jUyDARsKGuBg-yl',
+      'could you repeat':                       'https://docs.google.com/uc?export=download&id=1b4qTzmIZTuTqGoz9TVQbfe3x8ehzsZm9',
+      'ups error':                              'https://docs.google.com/uc?export=download&id=1xxsfo2jQRNzWO1iybPgbRgIbNc-gIjfr',
+   }
+
+   var timerToStopRec,
+       recCallBack = console.log
+   
+   function rec(){
+      stoprec()
+      if (timerToStopRec === undefined){
+         try{
+            recognition.start()
+            document.querySelector('.recbtn').style.scale='1.5'
+            clearTimeout(timerToStopRec)
+            timerToStopRec = setTimeout(stoprec, 30000)   
+            console.log(timerToStopRec)
+         }
+         catch{console.log('Failed to start recognition')}   }
+      else{console.log('Failed to start recognition during another recognition')}   }
+   
+   function stoprec(arg='STOP'){
+      if (timerToStopRec){
+         recognition.stop()
+         console.log('stoprec: '+arg)
+         document.querySelector('.recbtn').style.scale=''
+         recCallBack(arg)
+         clearTimeout(timerToStopRec)
+         timerToStopRec = undefined   }}
+   
+   recognition.onresult = e => stoprec(e.results[e.results.length-1][0].transcript) 
+   recognition.onspeechend = e => stoprec('SPEECHEND') 
+   recognition.onnomatch = e => stoprec('NOMATCH') 
+   recognition.onerror = e => { console.log('RECOGNITION ERROR ' + e.error); stoprec('ERROR') }
+   
+   function say(str='hi'){
+      let synth = new SpeechSynthesisUtterance(str)
+      // synth.addEventListener("start", stoprec)
+      // synth.addEventListener("end", startrec)
+      stoprec()
+      speechSynthesis.speak(synth)   }
+
+   /*
+   function say2(phrase){
+      if (!activescenario) {return}
+      if (phrase=='ERROR') {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/ups-error.mp3')
+         write('2 Ups, error happened')   }
+      else if (phrase=='STOP' || phrase=='SPEECHEND' || phrase=='NOMATCH') {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/could-you-repeat.mp3')
+         recCallBack = say2
+         write('2 Could you repeat?')   }
+      else if (similarPhrases(phrase,'hello')) {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/1-hello-what-can-I-get-you.mp3')
+         recCallBack = say3
+         write('2 Hello! What can I get you?')   }
+      else {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/excuse-me-what-lo-you-mean.mp3')
+         recCallBack = say2
+         write('2 Excuse me, what do you mean?')   }} 
+   
+   function say3(phrase){
+      if (!activescenario) {return}
+      if (phrase=='ERROR') {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/ups-error.mp3')
+         write('3 Ups, error happened')   }
+      else if (phrase=='STOP' || phrase=='SPEECHEND' || phrase=='NOMATCH') {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/could-you-repeat.mp3')
+         recCallBack = say3
+         write('3 Could you repeat?')   }
+      else if (similarPhrases(phrase,'one cheeseburger please')) {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/2-what-would-you-like-to-drink.mp3')
+         recCallBack = say4
+         write('3 What would you like to drink?')   }
+      else {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/excuse-me-what-lo-you-mean.mp3')
+         recCallBack = say3
+         write('3 Excuse me, what do you mean?')   }}  
+   
+   function say4(phrase){
+      if (!activescenario) {return}
+      if (phrase=='ERROR') {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/ups-error.mp3')
+         write('4 Ups, error happened')   }
+      else if (phrase=='STOP' || phrase=='SPEECHEND' || phrase=='NOMATCH') {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/could-you-repeat.mp3')
+         recCallBack = say4
+         write('4 Could you repeat?')   }
+      else if (similarPhrases(phrase,'coca cola please')) {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/3-ok-one-cheeseburger-one-cola-correct.mp3')
+         recCallBack = say5
+         write('4 Ok. One cheeseburger and cola. Is that correct?')   }
+      else {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/excuse-me-what-lo-you-mean.mp3')
+         recCallBack = say4
+         write('4 Excuse me, what do you mean?')   }}   
+   
+   function say5(phrase){
+      if (!activescenario) {return}
+      if (phrase=='ERROR') {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/ups-error.mp3')
+         write('5 Ups, error happened')   }
+      else if (phrase=='STOP' || phrase=='SPEECHEND' || phrase=='NOMATCH') {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/could-you-repeat.mp3')
+         recCallBack = say5
+         write('5 Could you repeat?')   }
+      else if (similarPhrases(phrase,'yes')) {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/4-your-lunch-thanks.mp3')
+         write('5 Your lunch, thanks for ordering')   }
+      else {
+         play('https://json-xml-web-view.000webhostapp.com/enggame/sounds/excuse-me-what-lo-you-mean.mp3')
+         recCallBack = say5
+         write('5 Excuse me, what do you mean?')   }}   
+         */
+
+/*
+   spritesheets = [
+      "https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/WalkingDemo-HANK-2-SHEET.png",
+      "https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/WalkingDemo-EMMY-SHEET.png",
+      "https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/WalkingDemo-SHIRMOND-SHEET.png",
+      "https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/WalkingDemo-SARA-SHEET.png",
+      "https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/WalkingDemo-PATTY-SHEET.png",
+      "https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/WalkingDemo-JESSIE-SHEET.png",
+      "https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/WalkingDemo-KIM-SHEET.png",
+      "https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/WalkingDemo-MINDY-SHEET.png",
+      "https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/WalkingDemo-ZAK-SHEET.png",
+      "https://s3-us-west-2.amazonaws.com/s.cdpn.io/21542/WalkingDemo-BEAR-SHEET.png" 	]
+   
+   spritesheets = [
+      "https://docs.google.com/uc?export=download&id=1-rPWWccNgTlv5LvW3ZurIIXAXdsAH2pF",
+      "https://docs.google.com/uc?export=download&id=11JV5py1Bxe_zZQUfmTtJ-l0yj7gIzPSJ",
+      "https://docs.google.com/uc?export=download&id=12jDYPj-sfulQ5T3IcX9PXoPaQYcYsP9D",
+      "https://docs.google.com/uc?export=download&id=18jkkWJnFPHdqIrNL4gKFxAFyyBiVow3X",
+      "https://docs.google.com/uc?export=download&id=1Cle9Tk8RYJ0lipygMV7eVl2Khhqqzn5v",
+      "https://docs.google.com/uc?export=download&id=1Gog21ptmK-l4Nb4GY_LZrcP5mrQZouPc",
+      "https://docs.google.com/uc?export=download&id=1PDAOhMeNNsis8lYmNFcw_qJgW8SKjgk6",
+      "https://docs.google.com/uc?export=download&id=1hGijajsdTGw5THzwpqZDSTp7mhELR4lG",
+      "https://docs.google.com/uc?export=download&id=1w6KEfu_M3DCUdpLoV_3MOZp5VSMSUQKI" 	]
+   */
+
+-->
+
+</body>
+</html>
